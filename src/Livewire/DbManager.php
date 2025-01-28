@@ -17,8 +17,26 @@ class DbManager extends Component
     public function mount()
     {
         // Get the database tables
-        $this->tables = DB::select('SHOW TABLES');
+        $this->tables = $this->getTables();
         $this->selectedTable = null; // Initialize the selected table
+    }
+
+    private function getTables()
+    {
+        // Get the database tables depending on the database connection
+        $connection = config('database.default');
+
+        switch ($connection) {
+            case 'sqlite':
+                return DB::select("SELECT name FROM sqlite_master WHERE type='table'");
+            case 'mysql':
+            case 'pgsql':
+                return DB::select('SHOW TABLES');
+            case 'sqlsrv':
+                return DB::select("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'");
+            default:
+                return []; // Return an empty array for unsupported databases
+        }
     }
 
     public function updatedSelectedTable($table)
